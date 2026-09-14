@@ -51,9 +51,8 @@ variable "db_user" {
 }
 
 variable "db_password" {
-  description = "PostgreSQL password"
+  description = "PostgreSQL password (set in terraform.tfvars - no default!)"
   type        = string
-  default     = "***REMOVED***"
   sensitive   = true
 }
 
