@@ -1,0 +1,16 @@
+---
+# Run database migrations
+
+- name: Run Django migrate
+  ansible.builtin.command: python3 manage.py migrate
+  args:
+    chdir: "{{ app_dir }}"
+  become: yes
+  become_user: "{{ app_user }}"
+
+- name: Collect static files
+  ansible.builtin.command: python3 manage.py collectstatic --noinput
+  args:
+    chdir: "{{ app_dir }}"
+  become: yes
+  become_user: "{{ app_user }}"

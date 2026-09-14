@@ -1,0 +1,4 @@
+---
+# postgres-setup vars
+
+postgresql_version: "15"

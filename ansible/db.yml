@@ -1,0 +1,9 @@
+---
+# db.yml - Setup PostgreSQL on database instance
+
+- hosts: database
+  become: yes
+  vars_files:
+    - roles/postgres-setup/defaults/main.yml
+  roles:
+    - postgres-setup

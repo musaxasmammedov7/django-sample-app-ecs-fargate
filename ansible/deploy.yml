@@ -1,0 +1,10 @@
+---
+# deploy.yml - Deploy Django application
+
+- hosts: webservers
+  become: yes
+  vars_files:
+    - roles/deploy/defaults/main.yml
+    - roles/deploy/values/main.yml
+  roles:
+    - deploy

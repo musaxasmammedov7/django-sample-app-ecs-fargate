@@ -1,0 +1,18 @@
+---
+# Install Python and development tools
+
+- name: Install Python and build tools
+  ansible.builtin.yum:
+    name: "{{ python_packages }}"
+    state: present
+  become: yes
+
+- name: Upgrade pip
+  ansible.builtin.command: pip3 install --upgrade pip
+  become: yes
+
+- name: Install gunicorn
+  ansible.builtin.pip:
+    name: gunicorn
+    executable: pip3
+  become: yes

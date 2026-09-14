@@ -1,0 +1,19 @@
+[Unit]
+Description=Gunicorn Django application server
+After=network.target
+
+[Service]
+User={{ app_user }}
+Group={{ app_user }}
+WorkingDirectory={{ app_dir }}
+EnvironmentFile={{ app_dir }}/.env
+ExecStart=/usr/local/bin/gunicorn \
+    --workers {{ gunicorn_workers | default(3) }} \
+    --timeout {{ gunicorn_timeout | default(120) }} \
+    --bind 127.0.0.1:{{ django_port | default(8000) }} \
+    hc.wsgi:application
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

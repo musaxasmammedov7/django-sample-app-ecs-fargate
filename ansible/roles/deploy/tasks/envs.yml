@@ -1,0 +1,11 @@
+---
+# Configure environment variables
+
+- name: Deploy environment file
+  ansible.builtin.template:
+    src: app.env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0600"
+  become: yes

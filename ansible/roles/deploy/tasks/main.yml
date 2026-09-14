@@ -1,0 +1,14 @@
+---
+# deploy tasks
+
+- name: Install application packages
+  ansible.builtin.include_tasks: packages.yml
+
+- name: Configure environment
+  ansible.builtin.include_tasks: envs.yml
+
+- name: Run database migrations
+  ansible.builtin.include_tasks: migration.yml
+
+- name: Run Django server
+  ansible.builtin.include_tasks: run-server.yml

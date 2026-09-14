@@ -1,0 +1,27 @@
+---
+# Install PostgreSQL packages
+
+- name: Install PostgreSQL server
+  ansible.builtin.yum:
+    name:
+      - postgresql15-server
+      - postgresql15
+      - postgresql15-devel
+      - python3-devel
+      - gcc
+      - libpq-devel
+    state: present
+  become: yes
+
+- name: Initialize PostgreSQL database
+  ansible.builtin.command: postgresql-setup --initdb
+  args:
+    creates: /var/lib/pgsql/data/PG_VERSION
+  become: yes
+
+- name: Start and enable PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: yes
+  become: yes

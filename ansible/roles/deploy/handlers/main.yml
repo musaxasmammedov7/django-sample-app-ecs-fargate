@@ -1,0 +1,14 @@
+---
+# deploy handlers
+
+- name: restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted
+  become: yes
+
+- name: restart gunicorn
+  ansible.builtin.service:
+    name: gunicorn
+    state: restarted
+  become: yes

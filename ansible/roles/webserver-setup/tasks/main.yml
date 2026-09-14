@@ -1,0 +1,8 @@
+---
+# webserver-setup tasks
+
+- name: Install Python packages
+  ansible.builtin.include_tasks: python-install.yml
+
+- name: Install Nginx
+  ansible.builtin.include_tasks: nginx-install.yml

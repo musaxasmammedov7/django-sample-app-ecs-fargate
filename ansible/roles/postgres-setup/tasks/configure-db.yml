@@ -1,0 +1,46 @@
+---
+# Configure PostgreSQL database
+
+- name: Create PostgreSQL user
+  become: yes
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    state: present
+
+- name: Create PostgreSQL database
+  become: yes
+  become_user: postgres
+  community.postgresql.postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user }}"
+    state: present
+
+- name: Allow password authentication
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /var/lib/pgsql/data/pg_hba.conf
+    regexp: '^local.*all.*all.*peer$'
+    line: "local   all             all                                     md5"
+    backrefs: yes
+
+- name: Allow connections from any host
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /var/lib/pgsql/data/pg_hba.conf
+    line: "host    all             all             0.0.0.0/0               md5"
+    insertbefore: "^# IPv6"
+
+- name: Update PostgreSQL config for listening on all interfaces
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /var/lib/pgsql/data/postgresql.conf
+    regexp: '^#?listen_addresses'
+    line: "listen_addresses = '*'"
+
+- name: Restart PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: restarted
+  become: yes

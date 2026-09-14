@@ -1,0 +1,8 @@
+---
+# postgres-setup tasks
+
+- name: Install PostgreSQL packages
+  ansible.builtin.include_tasks: packages.yml
+
+- name: Configure PostgreSQL database
+  ansible.builtin.include_tasks: configure-db.yml
