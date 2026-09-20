@@ -1,4 +1,8 @@
 ---
 # postgres-setup vars
+# Strong priority - these override group_vars (hardcoded, not overridable)
 
 postgresql_version: "15"
+postgresql_service: postgresql
+postgresql_data_dir: /var/lib/pgsql/data
+postgresql_config_dir: /var/lib/pgsql/data

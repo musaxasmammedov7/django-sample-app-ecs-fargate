@@ -16,12 +16,12 @@
 - name: Initialize PostgreSQL database
   ansible.builtin.command: postgresql-setup --initdb
   args:
-    creates: /var/lib/pgsql/data/PG_VERSION
+    creates: "{{ postgresql_data_dir }}/PG_VERSION"
   become: yes
 
 - name: Start and enable PostgreSQL
   ansible.builtin.service:
-    name: postgresql
+    name: "{{ postgresql_service }}"
     state: started
     enabled: yes
   become: yes

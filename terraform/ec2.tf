@@ -17,6 +17,7 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+
 ################
 # Application Instances (2)
 ################

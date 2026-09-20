@@ -1,5 +1,5 @@
 ---
-# Run database migrations
+# Run database migrations and collect static files
 
 - name: Run Django migrate
   ansible.builtin.command: python3 manage.py migrate

@@ -1,5 +1,5 @@
 ---
-# Run Django server via gunicorn
+# Configure nginx and run gunicorn
 
 - name: Deploy Nginx configuration
   ansible.builtin.copy:
@@ -8,6 +8,13 @@
     owner: root
     group: root
     mode: "0644"
+  become: yes
+  notify: restart nginx
+
+- name: Remove default nginx site (avoid conflict)
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
   become: yes
   notify: restart nginx
 
@@ -20,6 +27,11 @@
     mode: "0644"
   become: yes
   notify: restart gunicorn
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: yes
+  become: yes
 
 - name: Start gunicorn service
   ansible.builtin.service:

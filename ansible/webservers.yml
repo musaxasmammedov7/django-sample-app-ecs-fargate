@@ -1,9 +1,8 @@
 ---
 # webservers.yml - Setup web servers (Python + Nginx)
+# Run: ansible-playbook -i inventory.ini webservers.yml
 
 - hosts: webservers
   become: yes
-  vars_files:
-    - roles/webserver-setup/defaults/main.yml
   roles:
     - webserver-setup

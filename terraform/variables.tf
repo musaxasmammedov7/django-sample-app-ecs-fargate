@@ -50,11 +50,6 @@ variable "db_user" {
   default     = "hc_user"
 }
 
-variable "db_password" {
-  description = "PostgreSQL password (set in terraform.tfvars - no default!)"
-  type        = string
-  sensitive   = true
-}
 
 variable "github_repo" {
   description = "GitHub repo URL for the app"

@@ -37,24 +37,13 @@ output "db_private_ip" {
 ################
 
 resource "local_file" "inventory" {
-  content  = <<EOF
+  content = <<EOF
 [webservers]
 ${aws_instance.app[0].id} ansible_host=${aws_instance.app[0].private_ip} ansible_user=ec2-user ansible_connection=aws_ssm
 ${aws_instance.app[1].id} ansible_host=${aws_instance.app[1].private_ip} ansible_user=ec2-user ansible_connection=aws_ssm
 
 [database]
 ${aws_instance.db.id} ansible_host=${aws_instance.db.private_ip} ansible_user=ec2-user ansible_connection=aws_ssm
-
-[all:vars]
-ansible_python_interpreter=/usr/bin/python3
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
-
-[all:vars]
-db_host=${aws_instance.db.private_ip}
-db_port=5432
-db_name=${var.db_name}
-db_user=${var.db_user}
-db_password=${var.db_password}
 EOF
   filename = "${path.module}/../ansible/inventory.ini"
 }

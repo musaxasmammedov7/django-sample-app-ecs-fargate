@@ -1,0 +1,4 @@
+db_host: "{{ hostvars[groups['database'][0]]['ansible_host'] | default('localhost') }}"
+db_port: 5432
+db_name: hc
+db_user: hc_user

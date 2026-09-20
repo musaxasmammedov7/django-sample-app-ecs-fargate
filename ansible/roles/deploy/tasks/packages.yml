@@ -1,5 +1,5 @@
 ---
-# Install application dependencies
+# Clone application code and install dependencies
 
 - name: Create app directory
   ansible.builtin.file:

@@ -59,6 +59,7 @@ resource "aws_internet_gateway" "igw" {
 # NAT Gateway
 ################
 
+
 resource "aws_eip" "nat" {
   domain = "vpc"
 
@@ -77,6 +78,7 @@ resource "aws_nat_gateway" "nat" {
 
   depends_on = [aws_internet_gateway.igw]
 }
+
 
 ################
 # Route Tables
@@ -108,27 +110,28 @@ resource "aws_route_table" "private" {
   }
 }
 
+
 ################
 # Route Table Associations
 ################
 
 resource "aws_route_table_association" "public" {
-  count          = length(var.public_subnet_cidrs)
+  count          = 2
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
 resource "aws_route_table_association" "private" {
-  count          = length(var.private_subnet_cidrs)
+  count          = 2
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }
+
 
 ################
 # Security Groups
 ################
 
-# ALB Security Group
 resource "aws_security_group" "alb" {
   name_prefix = "${var.project_name}-alb-"
   description = "Security group for Application Load Balancer"
@@ -158,7 +161,6 @@ resource "aws_security_group" "alb" {
   }
 }
 
-# App Security Group
 resource "aws_security_group" "app" {
   name_prefix = "${var.project_name}-app-"
   description = "Security group for application instances"
@@ -188,7 +190,7 @@ resource "aws_security_group" "app" {
   }
 }
 
-# DB Security Group
+
 resource "aws_security_group" "db" {
   name_prefix = "${var.project_name}-db-"
   description = "Security group for database instance"

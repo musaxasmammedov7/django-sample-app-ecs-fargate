@@ -1,9 +1,8 @@
 ---
 # db.yml - Setup PostgreSQL on database instance
+# Run: ansible-playbook -i inventory.ini db.yml --ask-vault-pass
 
 - hosts: database
   become: yes
-  vars_files:
-    - roles/postgres-setup/defaults/main.yml
   roles:
     - postgres-setup

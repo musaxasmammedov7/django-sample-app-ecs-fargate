@@ -1,5 +1,5 @@
 ---
-# postgres-setup tasks
+# postgres-setup tasks (entry point)
 
 - name: Install PostgreSQL packages
   ansible.builtin.include_tasks: packages.yml

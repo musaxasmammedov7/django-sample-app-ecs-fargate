@@ -17,30 +17,27 @@
     owner: "{{ db_user }}"
     state: present
 
-- name: Allow password authentication
+- name: Allow password authentication for local connections
   become: yes
   ansible.builtin.lineinfile:
-    path: /var/lib/pgsql/data/pg_hba.conf
+    path: "{{ postgresql_config_dir }}/pg_hba.conf"
     regexp: '^local.*all.*all.*peer$'
     line: "local   all             all                                     md5"
     backrefs: yes
+  notify: restart postgresql
 
-- name: Allow connections from any host
+- name: Allow password authentication from any host in VPC
   become: yes
   ansible.builtin.lineinfile:
-    path: /var/lib/pgsql/data/pg_hba.conf
+    path: "{{ postgresql_config_dir }}/pg_hba.conf"
     line: "host    all             all             0.0.0.0/0               md5"
     insertbefore: "^# IPv6"
+  notify: restart postgresql
 
 - name: Update PostgreSQL config for listening on all interfaces
   become: yes
   ansible.builtin.lineinfile:
-    path: /var/lib/pgsql/data/postgresql.conf
+    path: "{{ postgresql_config_dir }}/postgresql.conf"
     regexp: '^#?listen_addresses'
     line: "listen_addresses = '*'"
-
-- name: Restart PostgreSQL
-  ansible.builtin.service:
-    name: postgresql
-    state: restarted
-  become: yes
+  notify: restart postgresql

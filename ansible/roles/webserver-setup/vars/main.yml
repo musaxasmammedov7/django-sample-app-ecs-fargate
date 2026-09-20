@@ -1,5 +1,6 @@
 ---
 # webserver-setup vars
+# Strong priority - hardcoded packages for the web server
 
 nginx_service_name: nginx
 python_packages:

@@ -1,5 +1,5 @@
 ---
-# Configure environment variables
+# Write environment file with DB credentials
 
 - name: Deploy environment file
   ansible.builtin.template:

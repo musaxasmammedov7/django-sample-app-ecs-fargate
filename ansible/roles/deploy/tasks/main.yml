@@ -1,14 +1,14 @@
 ---
-# deploy tasks
+# deploy tasks (entry point) - order matters!
 
-- name: Install application packages
+- name: Install application packages (clone repo + pip)
   ansible.builtin.include_tasks: packages.yml
 
-- name: Configure environment
+- name: Configure environment variables
   ansible.builtin.include_tasks: envs.yml
 
 - name: Run database migrations
   ansible.builtin.include_tasks: migration.yml
 
-- name: Run Django server
+- name: Run Django server (gunicorn + nginx)
   ansible.builtin.include_tasks: run-server.yml
