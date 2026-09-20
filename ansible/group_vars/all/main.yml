@@ -2,3 +2,9 @@ db_host: "{{ hostvars[groups['database'][0]]['ansible_host'] | default('localhos
 db_port: 5432
 db_name: hc
 db_user: hc_user
+
+# Django application configuration (used by django_configurator module)
+deployment_environment: production
+django_additional_settings:
+  SITE_ROOT: "http://{{ hostvars[groups['webservers'][0]]['ansible_host'] }}"
+  SITE_NAME: "Django Healthchecks"

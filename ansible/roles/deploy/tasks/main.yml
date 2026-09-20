@@ -4,6 +4,21 @@
 - name: Install application packages (clone repo + pip)
   ansible.builtin.include_tasks: packages.yml
 
+- name: Configure Django Application Settings
+  django_configurator:
+    environment: "{{ deployment_environment }}"
+    db_host: "{{ db_host }}"
+    db_name: "{{ db_name }}"
+    db_user: "{{ db_user }}"
+    db_password: "{{ db_password }}"
+    additional_settings: "{{ django_additional_settings }}"
+    app_dir: "{{ app_dir }}"
+  register: config_result
+
+- name: Output Configuration Result
+  ansible.builtin.debug:
+    msg: "{{ config_result.message }}"
+
 - name: Configure environment variables
   ansible.builtin.include_tasks: envs.yml
 
