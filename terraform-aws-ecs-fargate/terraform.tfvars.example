@@ -1,0 +1,37 @@
+# =============================================================================
+# terraform.tfvars example — copy to terraform.tfvars and adjust.
+# terraform.tfvars is git-ignored and must never be committed.
+# =============================================================================
+
+aws_region   = "eu-north-1"
+project_name = "django-sample-app"
+environment  = "prod"
+
+# Networking
+vpc_cidr                 = "10.0.0.0/16"
+availability_zone_count  = 2
+single_nat_gateway       = true
+
+# Container image (leave empty to use the ECR repository created by this stack)
+# container_image = "123456789012.dkr.ecr.eu-north-1.amazonaws.com/django-sample-app:v1.0.0"
+image_tag = "latest"
+
+# ECS sizing
+ecs_task_cpu       = 512
+ecs_task_memory    = 1024
+ecs_desired_count  = 1
+ecs_cpu_architecture = "X86_64"
+
+# Database
+db_name              = "hc"
+db_username          = "hc"
+db_instance_class    = "db.t4g.micro"
+db_allocated_storage = 20
+db_multi_az          = false
+
+# TLS (optional) — see the header comment in alb.tf for enabling HTTPS.
+
+# CI/CD
+create_github_oidc = true
+github_repository  = "musaxasmammedov7/django-sample-app"
+github_branch      = "main"

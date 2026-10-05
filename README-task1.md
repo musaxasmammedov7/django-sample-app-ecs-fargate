@@ -102,5 +102,5 @@ Edit `terraform/variables.tf` to customize:
 | instance_type | t3.micro | EC2 instance type |
 | db_name | hc | PostgreSQL database name |
 | db_user | hc_user | PostgreSQL username |
-| db_password | ***REMOVED*** | PostgreSQL password |
+| db_password | (stored in Ansible Vault) | PostgreSQL password |
 | github_repo | musaxasmammedov7/django-sample-app.git | App repository |

@@ -12,3 +12,7 @@ ansible/*.retry
 # Environment files (contain secrets)
 .env
 *.env
+
+# macOS / tooling artifacts
+.DS_Store
+..bfg-report/

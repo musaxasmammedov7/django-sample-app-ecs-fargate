@@ -1,0 +1,52 @@
+# =============================================================================
+# .dockerignore — keep the build context small and free of secrets.
+# Files listed here are NOT sent to the Docker daemon and are NOT copied into
+# the image. This speeds up builds and prevents leaking local/dev artifacts.
+# =============================================================================
+
+# Version control / CI
+.git
+.gitignore
+.github
+
+# Infrastructure as Code (not needed inside the application image)
+terraform
+terraform-aws-ecs-fargate
+ansible
+*.tf
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform
+
+# Local Python environments and bytecode
+.venv
+venv
+env
+__pycache__
+**/__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Local database / runtime artifacts
+*.sqlite
+*.sqlite3
+*.db
+hc.sqlite
+static-collected
+
+# Editors / OS
+.DS_Store
+.idea
+.vscode
+*.swp
+
+# Docker / compose files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# NOTE: do NOT ignore *.md — templates/docs/*.md is served by the app at runtime.

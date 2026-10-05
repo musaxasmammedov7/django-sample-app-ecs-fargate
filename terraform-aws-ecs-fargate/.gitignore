@@ -1,0 +1,14 @@
+# Terraform working files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Local variable files (may contain secrets)
+*.tfvars
+!terraform.tfvars.example
+
+# CLI config
+.terraformrc
+terraform.rc
