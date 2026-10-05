@@ -29,6 +29,7 @@ FROM python:3.12-slim-bookworm@sha256:9901e0a8d75037d8242ed43155cbcb2d1f61be1356
 # Reproducible, quiet, cache-free builds.
     #Обычно Python при импорте модулей создаёт папки __pycache__ с файлами .pyc (скомпилированный байт-код), чтобы в следующий раз запускаться чуть быстрее.При запуске имейджа это не имеет смысла
 ENV PYTHONDONTWRITEBYTECODE=1 \
+    # #По умолчанию Python копит вывод print() и логов в буфере и выдаёт его порциями.А это наполняте докер логс
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
