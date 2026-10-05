@@ -88,19 +88,29 @@ RUN set -eux; \
         libcurl4 \
         ca-certificates \
         tzdata; \
+    apt-get install -y --no-install-recommends --only-upgrade libpcre2-8-0; \
     rm -rf /var/lib/apt/lists/*; \
     groupadd --system --gid 1000 app; \
     useradd --system --uid 1000 --gid app --create-home --home-dir /app --shell /usr/sbin/nologin app
 
-# Harden the filesystem:
-#   - strip setuid/setgid bits (privilege-escalation vectors)
-#   - remove world-writable dirs commonly used for temporary staging
+# Harden the filesystem: strip setuid/setgid bits (privilege-escalation vectors).
 RUN set -eux; \
-    find / -xdev -type f -perm /6000 -exec chmod a-s {} + 2>/dev/null || true; \
-    chmod -R go-w /opt/venv
+    find / -xdev -type f -perm /6000 -exec chmod a-s {} + 2>/dev/null || true
 
 # Bring in the prepared virtualenv (owned by root, read-only for the app user).
 COPY --from=builder /opt/venv /opt/venv
+
+# Minimise attack surface: the runtime never installs packages, so the package
+# manager and its vendored tooling (pip -> urllib3/msgpack) are removed, along
+# with the unused copies in the base interpreter.
+RUN set -eux; \
+    rm -rf /opt/venv/lib/python3.12/site-packages/pip \
+           /opt/venv/lib/python3.12/site-packages/pip-*.dist-info; \
+    rm -rf /usr/local/lib/python3.12/site-packages/pip* \
+           /usr/local/lib/python3.12/site-packages/setuptools* \
+           /usr/local/lib/python3.12/site-packages/msgpack* \
+           /usr/local/lib/python3.12/site-packages/urllib3* 2>/dev/null || true; \
+    chmod -R go-w /opt/venv
 
 WORKDIR /app
 # COPY (never ADD) + explicit ownership.
