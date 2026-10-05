@@ -1,0 +1,72 @@
+# =============================================================================
+# Local development / smoke-test stack.
+#
+# Usage:
+#   docker compose up --build
+#   open http://localhost:8000
+#
+# This mirrors the production topology (Django + PostgreSQL) AND applies the
+# same runtime hardening used in production (see docs/DOCKER-SECURITY.md):
+#   - non-root user
+#   - read-only root filesystem with a small writable /tmp
+#   - all Linux capabilities dropped
+#   - no privilege escalation
+#   - an init process (PID 1) to reap zombies
+# =============================================================================
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: hc
+      POSTGRES_USER: hc
+      POSTGRES_PASSWORD: hc
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hc -d hc"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5432:5432"
+    security_opt:
+      - no-new-privileges:true
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: django-sample-app:local
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB: postgres
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: hc
+      DB_USER: hc
+      DB_PASSWORD: hc
+      DB_SSLMODE: disable
+      SECRET_KEY: local-dev-secret-key-not-for-production
+      DEBUG: "False"
+      SITE_ROOT: http://localhost:8000
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      WAIT_FOR_DB: "true"
+      RUN_MIGRATIONS: "true"
+      HOME: /tmp
+    ports:
+      - "8000:8000"
+    # --- Runtime hardening (mirrors ECS Fargate settings) --------------------
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    init: true
+
+volumes:
+  pgdata:
