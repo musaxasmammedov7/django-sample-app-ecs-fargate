@@ -47,8 +47,6 @@ static-collected
 *.pfx
 *.crt
 id_rsa*
-secrets/
-security/
 security-compliance-screenshots.png
 
 # Editors / OS

@@ -115,11 +115,11 @@ trivy image django-sample-app:local  # уязвимости готового о�
 - **Syft** строит **SBOM** (Software Bill of Materials) — полный список того,
   что внутри образа/проекта. Нужен для аудита и контроля цепочки поставок.
   ```bash
-  syft dir:. -o spdx-json=security/sbom.spdx.json
+  syft dir:. -o spdx-json=sbom.spdx.json
   ```
 - **Grype** сканирует SBOM или образ на уязвимости.
   ```bash
-  grype sbom:security/sbom.spdx.json
+  grype sbom:sbom.spdx.json
   grype docker:django-sample-app:local
   ```
 
@@ -137,7 +137,7 @@ trivy image django-sample-app:local  # уязвимости готового о�
 `latest`, лишний root и т.п.). У нас — 0 замечаний.
 
 ### 3.6. Как это встроено в CI
-`.github/workflows/security.yml` на каждый push и раз в неделю запускает
+`.github/workflows/ci-cd.yml` на каждый push и раз в неделю запускает
 hadolint, Trivy (IaC), Syft (SBOM) и Grype (зависимости + образ). Результаты
 уходят во вкладку **Security** в GitHub (SARIF), а SBOM сохраняется артефактом.
 
@@ -151,8 +151,8 @@ brew install hadolint trivy syft grype
 hadolint Dockerfile
 trivy config Dockerfile
 trivy fs --scanners vuln,secret,misconfig .
-syft dir:. -o spdx-json=security/sbom.spdx.json
-grype sbom:security/sbom.spdx.json
+syft dir:. -o spdx-json=sbom.spdx.json
+grype sbom:sbom.spdx.json
 
 # по готовому образу
 docker build -t django-sample-app:local .
@@ -162,7 +162,7 @@ docker scout cves django-sample-app:local
 ```
 
 В автоматическом режиме те же проверки запускает
-[`.github/workflows/security.yml`](../.github/workflows/security.yml) при каждом
+[`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml) при каждом
 push и раз в неделю.
 
 ---

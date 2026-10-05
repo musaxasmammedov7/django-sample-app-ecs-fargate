@@ -22,8 +22,7 @@
 |---|---|
 | Dockerfile | [`Dockerfile`](Dockerfile), [`docker/entrypoint.sh`](docker/entrypoint.sh), [`.dockerignore`](.dockerignore) |
 | Прод‑зависимости | [`requirements-prod.txt`](requirements-prod.txt) |
-| CI/CD + сканирование | [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml), [`.github/workflows/security.yml`](.github/workflows/security.yml) |
-| Проверка IaC | [`.github/workflows/terraform.yml`](.github/workflows/terraform.yml) |
+| CI/CD + сканирование + IaC‑проверка | [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) |
 | IaC | [`terraform-aws-ecs-fargate/`](terraform-aws-ecs-fargate) |
 
 ---
@@ -61,14 +60,15 @@ dive django-sample-app:local   # анализ слоёв/размера
 
 ## 3. CI/CD и сканирование
 
-`.github/workflows/ci-cd.yml` при push в `main`:
+`.github/workflows/ci-cd.yml` — единый пайплайн при push в `main`:
 
-1. Django `check` и проверку миграций;
-2. Trivy‑скан исходников (vuln/secret/misconfig) → SARIF в GitHub Security;
-3. сборку образа (`linux/amd64`);
-4. Trivy‑скан образа (падает на HIGH/CRITICAL);
-5. push в ECR;
-6. регистрацию новой ревизии task definition и обновление ECS‑сервиса.
+1. `terraform fmt` + `validate` (проверка IaC);
+2. Django `check` и проверку миграций;
+3. hadolint + Trivy (исходники и IaC) + SBOM (Syft) + Grype (зависимости) → SARIF в GitHub Security;
+4. сборку образа (`linux/amd64`);
+5. Trivy‑скан и Grype‑скан образа (падают на HIGH/CRITICAL);
+6. push в ECR;
+7. регистрацию новой ревизии task definition и обновление ECS‑сервиса.
 
 AWS‑доступ — через **GitHub OIDC** (без статичных ключей). Роль создаёт
 Terraform; её ARN нужно положить в переменную репозитория `AWS_ROLE_ARN`.
@@ -110,10 +110,9 @@ aws ecs describe-services --cluster django-sample-app --services django-sample-a
   (Trivy: **14 → 0** уязвимостей).
 - IaC: ECR **IMMUTABLE**, KMS CMK для ECR/Secrets, VPC Flow Logs.
 - Сканеры: **Trivy**, **Anchore Syft + Grype**, hadolint (+ упоминание Clair,
-  Docker Scout). Отдельный workflow [`.github/workflows/security.yml`](.github/workflows/security.yml).
-- SBOM: `security/sbom.spdx.json` (Syft, 46 пакетов), скан образа —
+  Docker Scout).
+- SBOM (Syft) и все сканы публикуются как artifacts/SARIF в рамках
+  [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml); скан образа —
   `No vulnerabilities found`.
 - Отчёт-скриншот: [`security-compliance-screenshots.png`](security-compliance-screenshots.png)
   (результаты hadolint, Trivy, Syft и Grype сведены в один отчёт).
-- Все проверки безопасности выполняются автоматически в
-  [`.github/workflows/security.yml`](.github/workflows/security.yml).

@@ -60,9 +60,7 @@ django-sample-app/
 ├── docker/
 │   └── entrypoint.sh              # wait-for-DB → migrate → exec gunicorn
 ├── .github/workflows/
-│   ├── ci-cd.yml                  # build → Trivy → ECR → ECS
-│   ├── security.yml               # hadolint + Trivy + Syft + Grype
-│   └── terraform.yml              # fmt + validate IaC
+│   └── ci-cd.yml                  # IaC validate → lint/test → security scans → build → ECR → ECS
 └── terraform-aws-ecs-fargate/
     ├── providers.tf               # Terraform + AWS provider + default_tags
     ├── variables.tf               # все входные переменные + locals
@@ -202,7 +200,7 @@ docker push $ECR_URL:$TAG
 3. Сделайте push в `main`. Пайплайн `.github/workflows/ci-cd.yml`:
 
    ```
-   lint-test → trivy-repo-scan → build → trivy-image-scan → ECR push → register task def → update ECS service
+   validate-iac → lint-test → security-scan → build-scan-push (ECR push → register task def → update ECS service)
    ```
 
 ### Шаг 6. Проверка
@@ -261,13 +259,14 @@ aws ecs describe-services \
 
 ## 8. CI/CD пайплайн
 
-Файл `.github/workflows/ci-cd.yml`.
+Единый файл `.github/workflows/ci-cd.yml`.
 
 | Job | Что делает |
 |---|---|
+| `validate-iac` | `terraform fmt -check` + `init -backend=false` + `validate` |
 | `lint-test` | `manage.py check` + проверка неприменённых миграций |
-| `trivy-repo-scan` | Trivy fs: уязвимости, секреты, misconfig → SARIF в Security tab |
-| `build-scan-push` | buildx‑сборка `linux/amd64`, **Trivy image scan** (fail на HIGH/CRITICAL), push в ECR, новая ревизия task definition, `ecs wait services-stable` |
+| `security-scan` | hadolint, Trivy (fs + config), Syft (SBOM), Grype (зависимости) → SARIF в Security tab + SBOM артефактом |
+| `build-scan-push` | buildx‑сборка `linux/amd64`, **Trivy image scan** и **Grype image scan** (fail на HIGH/CRITICAL), push в ECR, новая ревизия task definition, `ecs wait services-stable` |
 
 Пайплайн **не использует статичные AWS‑ключи**: он аутентифицируется через
 **GitHub OIDC** и роль `django-sample-app-gha-deploy`, созданную Terraform.
