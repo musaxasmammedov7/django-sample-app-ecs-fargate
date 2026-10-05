@@ -5,8 +5,13 @@
 #   docker compose up --build
 #   open http://localhost:8000
 #
-# This mirrors the production topology (Django + PostgreSQL) so that the same
-# container image can be validated before it is pushed to Amazon ECR.
+# This mirrors the production topology (Django + PostgreSQL) AND applies the
+# same runtime hardening used in production (see docs/DOCKER-SECURITY.md):
+#   - non-root user
+#   - read-only root filesystem with a small writable /tmp
+#   - all Linux capabilities dropped
+#   - no privilege escalation
+#   - an init process (PID 1) to reap zombies
 # =============================================================================
 services:
   db:
@@ -24,6 +29,8 @@ services:
       retries: 10
     ports:
       - "5432:5432"
+    security_opt:
+      - no-new-privileges:true
 
   app:
     build:
@@ -47,8 +54,19 @@ services:
       ALLOWED_HOSTS: localhost,127.0.0.1
       WAIT_FOR_DB: "true"
       RUN_MIGRATIONS: "true"
+      HOME: /tmp
     ports:
       - "8000:8000"
+    # --- Runtime hardening (mirrors ECS Fargate settings) --------------------
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    init: true
 
 volumes:
   pgdata:

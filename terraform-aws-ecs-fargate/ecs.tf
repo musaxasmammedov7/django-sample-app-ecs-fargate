@@ -19,7 +19,8 @@ resource "aws_ecr_repository" "app" {
   }
 
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key         = aws_kms_key.main.arn
   }
 
   tags = local.tags
@@ -79,15 +80,24 @@ module "ecs" {
 
   cloudwatch_log_group_retention_in_days = var.log_retention_in_days
 
-  # The task execution role may read only these secrets.
-  task_exec_secret_arns = [
-    local.rds_master_secret_arn,
-    aws_secretsmanager_secret.app.arn,
-  ]
-
   services = {
     app = {
       name = local.name
+
+      # The task execution role (created by the service module) may read only
+      # these secrets, and needs permission to decrypt the CMK-encrypted one.
+      task_exec_secret_arns = [
+        local.rds_master_secret_arn,
+        aws_secretsmanager_secret.app.arn,
+      ]
+
+      task_exec_iam_statements = [
+        {
+          sid       = "KmsDecryptAppSecrets"
+          actions   = ["kms:Decrypt", "kms:DescribeKey"]
+          resources = [aws_kms_key.main.arn]
+        },
+      ]
 
       # --- Task definition ---------------------------------------------------
       cpu                      = var.ecs_task_cpu
@@ -141,6 +151,16 @@ module "ecs" {
               valueFrom = local.db_password_secret_arn
             },
           ]
+
+          # Runtime hardening.
+          #   initProcessEnabled -> AWS injects a tiny init (tini) as PID 1 to
+          #     reap zombie processes and forward signals.
+          #   readonlyRootFilesystem is left false because Fargate cannot mount
+          #     a tmpfs for /tmp; the image itself is already non-root and the
+          #     Docker/Compose path enforces a read-only root filesystem.
+          linuxParameters = {
+            initProcessEnabled = true
+          }
 
           readonlyRootFilesystem                 = false
           enable_cloudwatch_logging              = true

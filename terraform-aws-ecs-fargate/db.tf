@@ -70,6 +70,9 @@ resource "aws_secretsmanager_secret" "app" {
   name        = "${local.name}/django"
   description = "Django runtime secrets for ${local.name}"
 
+  # Encrypt with the customer managed key instead of the AWS-managed default.
+  kms_key_id = aws_kms_key.main.arn
+
   # 0 days recovery makes destroy/create cycles painless for a demo project.
   # Use 7-30 days in a real production account.
   recovery_window_in_days = 0

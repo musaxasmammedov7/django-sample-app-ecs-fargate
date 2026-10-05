@@ -72,15 +72,15 @@ variable "container_image" {
 }
 
 variable "image_tag" {
-  description = "Image tag to deploy when container_image is not set explicitly."
+  description = "Image tag used for the initial bootstrap task definition. The CI pipeline overrides it with an immutable commit-SHA tag."
   type        = string
-  default     = "latest"
+  default     = "bootstrap"
 }
 
 variable "ecr_image_tag_mutability" {
-  description = "Whether image tags can be overwritten (MUTABLE) or are immutable (IMMUTABLE)."
+  description = "Whether image tags can be overwritten (MUTABLE) or are immutable (IMMUTABLE). IMMUTABLE is strongly recommended to prevent image-retagging attacks."
   type        = string
-  default     = "MUTABLE"
+  default     = "IMMUTABLE"
 
   validation {
     condition     = contains(["MUTABLE", "IMMUTABLE"], var.ecr_image_tag_mutability)

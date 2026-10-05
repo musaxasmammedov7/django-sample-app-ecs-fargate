@@ -97,3 +97,27 @@ curl -sS -o /dev/null -w "%{http_code}\n" "$URL"
 aws ecs describe-services --cluster django-sample-app --services django-sample-app \
   --query 'services[0].{running:runningCount,rollout:deployments[0].rolloutState}'
 ```
+
+---
+
+## 6. Task 3 — Безопасность образа
+
+Проведён аудит и усиление безопасности (подробно — в
+[`docs/DOCKER-SECURITY.md`](docs/DOCKER-SECURITY.md)):
+
+- Dockerfile: пин базового образа по digest, non-root, удаление setuid/setgid,
+  read-only /app, HEALTHCHECK, STOPSIGNAL; рантайм — read-only FS, `cap_drop ALL`,
+  `no-new-privileges`.
+- Исправлены уязвимые зависимости: Django 6.1 → 6.1.1, PyJWT 2.13.0 → 2.15.0
+  (Trivy: **14 → 0** уязвимостей).
+- IaC: ECR **IMMUTABLE**, KMS CMK для ECR/Secrets, VPC Flow Logs.
+- Сканеры: **Trivy**, **Anchore Syft + Grype**, hadolint (+ упоминание Clair,
+  Docker Scout). Отдельный workflow [`.github/workflows/security.yml`](.github/workflows/security.yml).
+- SBOM: `security/sbom.spdx.json` (Syft, 46 пакетов), скан образа —
+  `No vulnerabilities found`.
+- Отчёт-скриншот: [`security-compliance-screenshots.png`](security-compliance-screenshots.png),
+  генерируется скриптом [`scripts/security-scan.sh`](scripts/security-scan.sh).
+
+```bash
+./scripts/security-scan.sh        # локально прогоняет все сканеры и рисует PNG
+```

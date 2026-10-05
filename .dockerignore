@@ -38,6 +38,19 @@ __pycache__
 hc.sqlite
 static-collected
 
+# Secret material must never enter the build context / image layers
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa*
+secrets/
+security/
+security-compliance-screenshots.png
+
 # Editors / OS
 .DS_Store
 .idea

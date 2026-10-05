@@ -47,6 +47,9 @@ module "vpc" {
   # Tasks/instances in private subnets must not get public IPs.
   map_public_ip_on_launch = false
 
+  # Network traffic visibility / anomaly detection (Trivy AWS-0178).
+  enable_flow_log = true
+
   tags = local.tags
 }
 
