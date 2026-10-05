@@ -31,7 +31,9 @@ FROM python:3.12-slim-bookworm@sha256:9901e0a8d75037d8242ed43155cbcb2d1f61be1356
 ENV PYTHONDONTWRITEBYTECODE=1 \
     # #По умолчанию Python копит вывод print() и логов в буфере и выдаёт его порциями.А это наполняте докер логс
     PYTHONUNBUFFERED=1 \
+    #pip обычно сохраняет скачанные пакеты в кеш (~/.cache/pip),а в имейдже кеш не нужен
     PIP_NO_CACHE_DIR=1 \
+    #отключает проверку обновлений самого pip.Если после каждого pip install это будет выходить то будет засоряться логи
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Build-time system dependencies:
