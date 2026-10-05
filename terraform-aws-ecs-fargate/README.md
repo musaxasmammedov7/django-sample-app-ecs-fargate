@@ -60,7 +60,8 @@ django-sample-app/
 ├── docker/
 │   └── entrypoint.sh              # wait-for-DB → migrate → exec gunicorn
 ├── .github/workflows/
-│   └── ci-cd.yml                  # IaC validate → lint/test → security scans → build → ECR → ECS
+│   ├── ci-cd.yml                  # lint/test → security scans → build → ECR → ECS
+│   └── terraform.yml              # Terraform fmt + validate (IaC)
 └── terraform-aws-ecs-fargate/
     ├── providers.tf               # Terraform + AWS provider + default_tags
     ├── variables.tf               # все входные переменные + locals
@@ -200,8 +201,9 @@ docker push $ECR_URL:$TAG
 3. Сделайте push в `main`. Пайплайн `.github/workflows/ci-cd.yml`:
 
    ```
-   validate-iac → lint-test → security-scan → build-scan-push (ECR push → register task def → update ECS service)
+   lint-test → security-scan → build-scan-push (ECR push → register task def → update ECS service)
    ```
+   (Проверка Terraform выполняется отдельным workflow `terraform.yml`.)
 
 ### Шаг 6. Проверка
 
@@ -257,16 +259,18 @@ aws ecs describe-services \
 
 ---
 
-## 8. CI/CD пайплайн
+## 8. CI/CD пайплайны
 
-Единый файл `.github/workflows/ci-cd.yml`.
+Приложение — `.github/workflows/ci-cd.yml`:
 
 | Job | Что делает |
 |---|---|
-| `validate-iac` | `terraform fmt -check` + `init -backend=false` + `validate` |
 | `lint-test` | `manage.py check` + проверка неприменённых миграций |
 | `security-scan` | hadolint, Trivy (fs + config), Syft (SBOM), Grype (зависимости) → SARIF в Security tab + SBOM артефактом |
 | `build-scan-push` | buildx‑сборка `linux/amd64`, **Trivy image scan** и **Grype image scan** (fail на HIGH/CRITICAL), push в ECR, новая ревизия task definition, `ecs wait services-stable` |
+
+Инфраструктура — отдельный `.github/workflows/terraform.yml` (`fmt` + `validate`,
+запускается только при изменениях в `terraform-aws-ecs-fargate/`).
 
 Пайплайн **не использует статичные AWS‑ключи**: он аутентифицируется через
 **GitHub OIDC** и роль `django-sample-app-gha-deploy`, созданную Terraform.

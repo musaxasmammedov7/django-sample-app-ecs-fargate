@@ -22,7 +22,8 @@
 |---|---|
 | Dockerfile | [`Dockerfile`](Dockerfile), [`docker/entrypoint.sh`](docker/entrypoint.sh), [`.dockerignore`](.dockerignore) |
 | Прод‑зависимости | [`requirements-prod.txt`](requirements-prod.txt) |
-| CI/CD + сканирование + IaC‑проверка | [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) |
+| CI/CD + сканирование | [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) |
+| Проверка IaC (Terraform) | [`.github/workflows/terraform.yml`](.github/workflows/terraform.yml) |
 | IaC | [`terraform-aws-ecs-fargate/`](terraform-aws-ecs-fargate) |
 
 ---
@@ -60,15 +61,17 @@ dive django-sample-app:local   # анализ слоёв/размера
 
 ## 3. CI/CD и сканирование
 
-`.github/workflows/ci-cd.yml` — единый пайплайн при push в `main`:
+`.github/workflows/ci-cd.yml` — пайплайн приложения при push в `main`:
 
-1. `terraform fmt` + `validate` (проверка IaC);
-2. Django `check` и проверку миграций;
-3. hadolint + Trivy (исходники и IaC) + SBOM (Syft) + Grype (зависимости) → SARIF в GitHub Security;
-4. сборку образа (`linux/amd64`);
-5. Trivy‑скан и Grype‑скан образа (падают на HIGH/CRITICAL);
-6. push в ECR;
-7. регистрацию новой ревизии task definition и обновление ECS‑сервиса.
+1. Django `check` и проверку миграций;
+2. hadolint + Trivy (исходники и IaC) + SBOM (Syft) + Grype (зависимости) → SARIF в GitHub Security;
+3. сборку образа (`linux/amd64`);
+4. Trivy‑скан и Grype‑скан образа (падают на HIGH/CRITICAL);
+5. push в ECR;
+6. регистрацию новой ревизии task definition и обновление ECS‑сервиса.
+
+IaC проверяется **отдельным** workflow `.github/workflows/terraform.yml`
+(`fmt` + `validate`) и запускается только при изменениях в Terraform.
 
 AWS‑доступ — через **GitHub OIDC** (без статичных ключей). Роль создаёт
 Terraform; её ARN нужно положить в переменную репозитория `AWS_ROLE_ARN`.

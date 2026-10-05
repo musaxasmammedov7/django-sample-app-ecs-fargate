@@ -1,0 +1,53 @@
+name: Terraform
+
+# =============================================================================
+# Validates the Infrastructure as Code in terraform-aws-ecs-fargate/.
+# Runs only when Terraform sources (or this workflow) change, so it is
+# independent from the application CI/CD pipeline (ci-cd.yml).
+#
+# No AWS credentials are needed: it only performs fmt -check, init
+# -backend=false and validate.
+# =============================================================================
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform-aws-ecs-fargate/**'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    paths:
+      - 'terraform-aws-ecs-fargate/**'
+      - '.github/workflows/terraform.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TF_WORKING_DIR: terraform-aws-ecs-fargate
+
+jobs:
+  validate:
+    name: fmt & validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.11.1'
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init (no backend)
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform validate
+        run: terraform validate -no-color
