@@ -11,7 +11,8 @@
 #   4.4  No package manager / build toolchain in the runtime image
 #   4.6  Application runs as an unprivileged, numeric non-root user (UID 1000)
 #   4.7  setuid/setgid bits stripped; /app not writable by group/other
-#   4.8  HEALTHCHECK defined so orchestrators can detect a broken container
+#   4.8  Container health is checked natively by ECS (task definition) and the
+#        ALB target group, not via a Docker HEALTHCHECK (ECS ignores it)
 #   4.9  Secrets are NEVER baked into layers (injected at runtime)
 #   5.x  Writable files are limited to explicitly mounted tmpfs at runtime
 #
@@ -27,13 +28,15 @@
 FROM python:3.12-slim-bookworm@sha256:9901e0a8d75037d8242ed43155cbcb2d1f61be1356383d8054afb59fd50e39c4 AS builder
 
 # Reproducible, quiet, cache-free builds.
-    #Обычно Python при импорте модулей создаёт папки __pycache__ с файлами .pyc (скомпилированный байт-код), чтобы в следующий раз запускаться чуть быстрее.При запуске имейджа это не имеет смысла
+#   PYTHONDONTWRITEBYTECODE=1  — не создавать __pycache__/.pyc: в образе это
+#                                бессмысленно (ускоряет только повторный импорт).
+#   PYTHONUNBUFFERED=1         — не буферизовать вывод: логи сразу уходят в
+#                                Docker/CloudWatch, а не копятся порциями.
+#   PIP_NO_CACHE_DIR=1         — pip не хранит кэш скачанных пакетов в образе.
+#   PIP_DISABLE_PIP_VERSION_CHECK=1 — не проверять обновления pip (не засоряет логи).
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    # #По умолчанию Python копит вывод print() и логов в буфере и выдаёт его порциями.А это наполняте докер логс
     PYTHONUNBUFFERED=1 \
-    #pip обычно сохраняет скачанные пакеты в кеш (~/.cache/pip),а в имейдже кеш не нужен
     PIP_NO_CACHE_DIR=1 \
-    #отключает проверку обновлений самого pip.Если после каждого pip install это будет выходить то будет засоряться логи
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Build-time system dependencies:
@@ -55,7 +58,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m venv /opt/venv
-#скачивает пакеты в следущем шаге и кладет сюда пакеты
+# Пакеты, установленные на следующем шаге, окажутся в этом окружении (venv).
 ENV PATH="/opt/venv/bin:${PATH}"
 
 WORKDIR /build
@@ -130,9 +133,10 @@ USER 1000:1000
 RUN SECRET_KEY=build-time-placeholder python manage.py collectstatic --noinput \
     && SECRET_KEY=build-time-placeholder python manage.py compress --force
 
-# Fail fast if the WSGI app stops serving.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD ["python", "-c", "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v3/status/', timeout=4).status == 200 else 1)"]
+# Health checks are performed natively by ECS (see the container `healthCheck`
+# in terraform-aws-ecs-fargate/ecs.tf) and by the ALB target group.
+# The Docker HEALTHCHECK instruction is intentionally omitted because ECS
+# Fargate ignores it (it only affects plain `docker run` locally).
 
 EXPOSE 8000
 

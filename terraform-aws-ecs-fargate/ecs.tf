@@ -163,6 +163,17 @@ module "ecs" {
             initProcessEnabled = true
           }
 
+          # Container-level health check that ECS actually evaluates (the Docker
+          # HEALTHCHECK instruction is ignored by ECS/Fargate). Hits the app's
+          # own status endpoint from inside the container.
+          healthCheck = {
+            command     = ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:${var.container_port}${var.health_check_path}', timeout=4).status == 200 else 1)\""]
+            interval    = 30
+            timeout     = 5
+            retries     = 3
+            startPeriod = 60
+          }
+
           readonlyRootFilesystem                 = false
           enable_cloudwatch_logging              = true
           create_cloudwatch_log_group            = true

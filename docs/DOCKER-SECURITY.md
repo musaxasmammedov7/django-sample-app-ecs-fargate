@@ -60,9 +60,14 @@ setuid-бинарники — классический путь повышени
 ECS подставляет в рантайме из AWS Secrets Manager. Проверить, что секрета нет в
 образе, можно так: `docker history --no-trunc <image>`.
 
-### 1.7. HEALTHCHECK и STOPSIGNAL
-- `HEALTHCHECK` — Docker/оркестратор понимает, что контейнер «жив», и может
-  перезапустить зависший.
+### 1.7. Проверка здоровья и STOPSIGNAL
+- **Проверка здоровья делается средствами ECS, а не Docker.** Инструкция
+  `HEALTHCHECK` в Dockerfile сознательно **не используется**: ECS Fargate её
+  игнорирует (она влияет только на локальный `docker run`). Вместо неё:
+  - `healthCheck` в описании контейнера (task definition, `ecs.tf`) — ECS сам
+    опрашивает `/api/v3/status/` внутри контейнера;
+  - health check на target group в **ALB** (`alb.tf`) — определяет, слать ли
+    трафик в задачу.
 - `STOPSIGNAL SIGTERM` — при остановке gunicorn корректно завершает запросы
   (graceful shutdown), а не обрывает их.
 
