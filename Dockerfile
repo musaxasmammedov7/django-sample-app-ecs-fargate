@@ -143,6 +143,7 @@ EXPOSE 8000
 # Terminate cleanly on `docker stop` / ECS task stop.
 STOPSIGNAL SIGTERM
 
+#то есть выполняется скрипт как только создается конктейнер и в этом скрипте ожидается подкл к бд, миграция а потом уже передаются перменные гуникорна
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
 CMD ["gunicorn", "hc.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
