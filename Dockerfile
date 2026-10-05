@@ -27,6 +27,7 @@
 FROM python:3.12-slim-bookworm@sha256:9901e0a8d75037d8242ed43155cbcb2d1f61be1356383d8054afb59fd50e39c4 AS builder
 
 # Reproducible, quiet, cache-free builds.
+    #Обычно Python при импорте модулей создаёт папки __pycache__ с файлами .pyc (скомпилированный байт-код), чтобы в следующий раз запускаться чуть быстрее.При запуске имейджа это не имеет смысла
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
