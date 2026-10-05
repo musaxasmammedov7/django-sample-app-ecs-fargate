@@ -9,7 +9,7 @@
 #   3. Hand over control (exec) to the process supplied in CMD (gunicorn).
 #
 # All behaviour is controlled through environment variables so the very same
-# image works locally (docker compose) and on ECS Fargate.
+# image can run locally (docker run) and on ECS Fargate.
 # =============================================================================
 set -euo pipefail
 

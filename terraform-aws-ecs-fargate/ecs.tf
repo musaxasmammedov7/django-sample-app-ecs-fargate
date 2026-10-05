@@ -156,8 +156,9 @@ module "ecs" {
           #   initProcessEnabled -> AWS injects a tiny init (tini) as PID 1 to
           #     reap zombie processes and forward signals.
           #   readonlyRootFilesystem is left false because Fargate cannot mount
-          #     a tmpfs for /tmp; the image itself is already non-root and the
-          #     Docker/Compose path enforces a read-only root filesystem.
+          #     a tmpfs for /tmp; the image itself is already non-root. When the
+          #     container is run directly with `docker run`, a read-only root
+          #     filesystem plus `--tmpfs /tmp` can be enforced.
           linuxParameters = {
             initProcessEnabled = true
           }

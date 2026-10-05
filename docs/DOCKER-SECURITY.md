@@ -66,19 +66,19 @@ ECS подставляет в рантайме из AWS Secrets Manager. Про�
 - `STOPSIGNAL SIGTERM` — при остановке gunicorn корректно завершает запросы
   (graceful shutdown), а не обрывает их.
 
-### 1.8. Runtime-закалка (Docker Compose / ECS)
-В `docker-compose.yml` и ECS task definition:
+### 1.8. Runtime-закалка (Docker / ECS)
+При запуске контейнера применяются:
 ```yaml
 user: "1000:1000"
-read_only: true            # корневая ФС только для чтения
-tmpfs: ["/tmp:size=64m"]   # единственная записываемая папка
-cap_drop: [ALL]            # отбираем ВСЕ Linux capabilities
-security_opt: [no-new-privileges:true]  # запрет повышения привилегий
-init: true                 # PID 1, переработка зомби-процессов
+read_only: true                          # корневая ФС только для чтения
+tmpfs: ["/tmp:size=64m"]                 # единственная записываемая папка
+cap_drop: [ALL]                          # отбираем ВСЕ Linux capabilities
+security_opt: [no-new-privileges:true]   # запрет повышения привилегий
+init: true                               # PID 1, переработка зомби-процессов
 ```
 В ECS для Fargate включён `initProcessEnabled = true`. `readonlyRootFilesystem`
-оставлен `false`, потому что Fargate не даёт смонтировать tmpfs для `/tmp`;
-в Docker/Compose read-only включён.
+оставлен `false`, потому что Fargate не даёт смонтировать tmpfs для `/tmp`; при
+запуске через `docker run` рекомендован read-only корень с `--tmpfs /tmp`.
 
 ---
 
@@ -145,16 +145,6 @@ hadolint, Trivy (IaC), Syft (SBOM) и Grype (зависимости + образ
 
 ## 4. Запуск проверок локально
 
-Одной командой (то же, что делает CI):
-
-```bash
-./scripts/security-scan.sh
-```
-Скрипт прогонит hadolint, Trivy, Syft, Grype, соберёт отчёт и сгенерирует
-картинку `security-compliance-screenshots.png`.
-
-Ручные команды:
-
 ```bash
 brew install hadolint trivy syft grype
 
@@ -170,6 +160,10 @@ dive django-sample-app:local          # анализ слоёв/размера
 trivy image django-sample-app:local
 docker scout cves django-sample-app:local
 ```
+
+В автоматическом режиме те же проверки запускает
+[`.github/workflows/security.yml`](../.github/workflows/security.yml) при каждом
+push и раз в неделю.
 
 ---
 

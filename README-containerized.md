@@ -22,8 +22,7 @@
 |---|---|
 | Dockerfile | [`Dockerfile`](Dockerfile), [`docker/entrypoint.sh`](docker/entrypoint.sh), [`.dockerignore`](.dockerignore) |
 | Прод‑зависимости | [`requirements-prod.txt`](requirements-prod.txt) |
-| Локальный smoke‑тест | [`docker-compose.yml`](docker-compose.yml) |
-| CI/CD + Trivy | [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) |
+| CI/CD + сканирование | [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml), [`.github/workflows/security.yml`](.github/workflows/security.yml) |
 | Проверка IaC | [`.github/workflows/terraform.yml`](.github/workflows/terraform.yml) |
 | IaC | [`terraform-aws-ecs-fargate/`](terraform-aws-ecs-fargate) |
 
@@ -52,10 +51,9 @@
 Контейнер стартует через `docker/entrypoint.sh`:
 `wait-for-DB` → `manage.py migrate` → `exec gunicorn hc.wsgi:application`.
 
-## 2. Локальная проверка
+## 2. Сборка и проверка образа
 
 ```bash
-docker compose up --build      # http://localhost:8000
 docker build -t django-sample-app:local .
 brew install dive
 dive django-sample-app:local   # анализ слоёв/размера
@@ -115,9 +113,7 @@ aws ecs describe-services --cluster django-sample-app --services django-sample-a
   Docker Scout). Отдельный workflow [`.github/workflows/security.yml`](.github/workflows/security.yml).
 - SBOM: `security/sbom.spdx.json` (Syft, 46 пакетов), скан образа —
   `No vulnerabilities found`.
-- Отчёт-скриншот: [`security-compliance-screenshots.png`](security-compliance-screenshots.png),
-  генерируется скриптом [`scripts/security-scan.sh`](scripts/security-scan.sh).
-
-```bash
-./scripts/security-scan.sh        # локально прогоняет все сканеры и рисует PNG
-```
+- Отчёт-скриншот: [`security-compliance-screenshots.png`](security-compliance-screenshots.png)
+  (результаты hadolint, Trivy, Syft и Grype сведены в один отчёт).
+- Все проверки безопасности выполняются автоматически в
+  [`.github/workflows/security.yml`](.github/workflows/security.yml).

@@ -56,12 +56,12 @@ Fargate**. Вся инфраструктура описана как код (IaC
 django-sample-app/
 ├── Dockerfile                     # multi-stage сборка приложения (в корне форка)
 ├── requirements-prod.txt          # gunicorn и пр. прод-зависимости
-├── docker-compose.yml             # локальный запуск Django + PostgreSQL
 ├── .dockerignore
 ├── docker/
 │   └── entrypoint.sh              # wait-for-DB → migrate → exec gunicorn
 ├── .github/workflows/
 │   ├── ci-cd.yml                  # build → Trivy → ECR → ECS
+│   ├── security.yml               # hadolint + Trivy + Syft + Grype
 │   └── terraform.yml              # fmt + validate IaC
 └── terraform-aws-ecs-fargate/
     ├── providers.tf               # Terraform + AWS provider + default_tags
@@ -121,19 +121,16 @@ git clone https://github.com/<ВАШ_АККАУНТ>/django-sample-app.git
 cd django-sample-app
 ```
 
-### Шаг 1. Локальный запуск (проверка образа до облака)
-
-Поднимает Django + PostgreSQL локально через тот же образ, что пойдёт в ECR:
-
-```bash
-docker compose up --build
-# http://localhost:8000
-```
-
-### Шаг 2. Сборка образа и проверка `dive`
+### Шаг 1. Сборка образа
 
 ```bash
 docker build -t django-sample-app:local .
+```
+
+### Шаг 2. Проверка образа через `dive`
+
+```bash
+brew install dive
 
 # Анализ слоёв, размера и потенциальных проблем
 dive django-sample-app:local

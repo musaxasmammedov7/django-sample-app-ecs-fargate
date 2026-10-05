@@ -57,9 +57,8 @@ security-compliance-screenshots.png
 .vscode
 *.swp
 
-# Docker / compose files
+# Docker build files
 Dockerfile
-docker-compose.yml
 .dockerignore
 
 # NOTE: do NOT ignore *.md — templates/docs/*.md is served by the app at runtime.

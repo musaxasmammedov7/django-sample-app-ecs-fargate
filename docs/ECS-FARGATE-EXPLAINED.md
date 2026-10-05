@@ -120,12 +120,6 @@ wait-for-DB  ->  python manage.py migrate  ->  exec gunicorn
 3. **`exec gunicorn`**: `exec` заменяет процесс shell на gunicorn — важно, чтобы
    именно gunicorn получал сигналы остановки от ECS.
 
-### 1.5. `docker-compose.yml` — зачем
-
-Позволяет поднять локально **и** Django, **и** PostgreSQL одной командой
-`docker compose up --build`. Это проверка образа до отправки в AWS — дешевле и
-быстрее, чем гонять в облако.
-
 ---
 
 ## Часть 2. Amazon ECR — хранилище образов
