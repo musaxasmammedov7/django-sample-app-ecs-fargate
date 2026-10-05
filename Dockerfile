@@ -55,6 +55,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m venv /opt/venv
+#Благодаря этому команды python и pip дальше автоматически берутся из venv, и activate вызывать не нужно.
 ENV PATH="/opt/venv/bin:${PATH}"
 
 WORKDIR /build
