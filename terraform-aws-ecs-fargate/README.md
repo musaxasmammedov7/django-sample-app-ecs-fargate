@@ -68,9 +68,9 @@ django-sample-app/
     ├── vpc.tf                     # VPC, подсети, NAT, security groups
     ├── alb.tf                     # Application Load Balancer + target group
     ├── db.tf                      # RDS PostgreSQL + секреты Secrets Manager
+    ├── kms.tf                     # Customer Managed Key (ECR + Secrets Manager)
     ├── ecs.tf                     # ECR + ECS Fargate + IAM/OIDC для CI
     ├── outputs.tf                 # полезные значения после apply
-    ├── Dockerfile                 # копия Dockerfile (по требованию структуры)
     ├── terraform.tfvars.example   # пример переменных
     ├── .gitignore
     └── README.md                  # этот файл
@@ -332,7 +332,7 @@ terraform destroy
 
 | Требование задания | Как выполнено |
 |---|---|
-| Форк `django-sample-app` с изменениями | Dockerfile, entrypoint, `.dockerignore`, compose, CI |
+| Форк `django-sample-app` с изменениями | корневой Dockerfile, entrypoint, `.dockerignore`, CI |
 | Dockerfile с зависимостями и конфигом Postgres | multi‑stage, `psycopg`/`pycurl`, env `DB=postgres`, миграции |
 | Build & push образа в ECR | CI/CD GitHub Actions + ручные команды (раздел 5) |
 | Проверка образа через `dive` | раздел 5, шаг 2 |
@@ -340,4 +340,4 @@ terraform destroy
 | Postgres RDS | `db.tf` (`terraform-aws-modules/rds`) |
 | Деплой в ECS | ECS service + ALB + CI (task definition revision) |
 | Тестирование | `curl <application_url>`, health check `/api/v3/status/`, CloudWatch Logs |
-| Структура IaC `terraform-aws-ecs-fargate` | все требуемые файлы присутствуют |
+| Структура IaC `terraform-aws-ecs-fargate` | все `.tf`-файлы присутствуют; Dockerfile — в корне репозитория |
