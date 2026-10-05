@@ -194,28 +194,70 @@ Kata запускает контейнер внутри **лёгкой вирт�
 «машины как процесса» (systemd, несколько сервисов), больше похожи на chroot +
 namespaces, чем на однопроцессный Docker-контейнер.
 
-### 5.4. Сравнение
+### 5.4. Можно ли применить Kata в нашем стеке (ECS Fargate)?
+Короткий ответ: **нет, на ECS Fargate Kata напрямую не включается.** Причины:
+
+- Fargate — **управляемый** сервис: мы не выбираем container runtime, там
+  всегда runc-совместимый runtime, и параметра «запусти через Kata» нет.
+- ECS на EC2 (launch type = EC2) тоже рассчитан на runc через ECS-агент;
+  механизма `RuntimeClass`, как в Kubernetes, в ECS нет.
+
+**Но нужный уровень изоляции у нас уже есть:** под капотом Fargate запускает
+каждую задачу в **Firecracker microVM** — это та же идея, что у Kata:
+отдельная лёгкая виртуальная машина со своим ядром. То есть «Kata-подобная»
+изоляция на Fargate доступна «бесплатно» и по умолчанию.
+
+### 5.5. Как реализовать Kata «по-настоящему»
+Kata требует **Kubernetes (EKS)** или ручного containerd — это отдельная
+инфраструктура, а не опция ECS.
+
+**Вариант A — EKS + RuntimeClass:**
+```yaml
+# 1) Класс рантайма
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: kata
+handler: kata
+```
+```yaml
+# 2) В pod/деплойменте указываем класс
+spec:
+  runtimeClassName: kata
+  containers:
+    - name: app
+      image: <ecr>/django-sample-app:<tag>
+```
+
+**Вариант B — standalone containerd на Linux:**
+1. установить `kata-containers`;
+2. прописать рантайм в `/etc/containerd/config.toml`:
+   ```toml
+   [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.kata]
+     runtime_type = "io.containerd.kata.v2"
+   ```
+3. перезапустить containerd и запускать:
+   ```bash
+   nerdctl run --runtime io.containerd.kata.v2 -it alpine sh
+   ```
+
+**Важно:** на macOS (Docker Desktop) Kata не поддерживается — нужен Linux-хост
+или managed-сервис с поддержкой RuntimeClass.
+
+### 5.6. Сравнение
 
 | Технология | Изоляция | Ядро | Скорость старта | Когда выбирать |
 |---|---|---|---|---|
 | **runc/containerd** (Docker) | средняя | общее | мс | обычные приложения, доверенный код |
-| **Kata Containers** | высокая (ВМ) | своё | сотни мс | недоверенный/мультитенантный код |
+| **Kata Containers** | высокая (микро-ВМ) | своё | сотни мс | недоверенный/мультитенантный код |
+| **Firecracker** (под Fargate) | высокая (микро-ВМ) | своё | сотни мс | то же, что Kata, но уже встроено в ECS Fargate |
 | **LXC/LXD** | средняя-высокая | общее | секунды | «системные» контейнеры, несколько сервисов |
 
-### 5.5. Как попробовать Kata локально
-Если стоит Docker Desktop/containerd, можно запустить Kata через runtime-класс:
-```bash
-# пример для containerd/nerdctl
-nerdctl run --runtime io.containerd.kata.v2 -it alpine sh
-```
-На Linux с установленным Kata: настроить containerd runtime `kata`, затем
-`nerdctl --runtime=kata run ...`. В облаке Kata часто используют как «песочницу»
-для ненадёжных нагрузок.
-
-### 5.6. Вывод для клиента
-Для нашего приложения (один процесс gunicorn, доверенный код, запуск на
-управляемом Fargate) **runc достаточен и оптимален**. Kata стоит рассмотреть,
-если позже появится требование запускать недоверенный пользовательский код.
+### 5.7. Вывод для клиента
+Наше приложение (один процесс gunicorn, доверенный код, Fargate) уже работает
+в микро-ВМ Firecracker, поэтому отдельный Kata не нужен — это была бы лишняя
+инфраструктура (EKS). Kata стоит рассмотреть, только если появится требование
+запускать **недоверенный пользовательский код** и при этом использовать EKS.
 
 ---
 
