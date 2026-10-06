@@ -62,36 +62,60 @@ namespaces; удобно запускать «машину как процесс
 
 ---
 
-## 3. Практика: LXC
+## 3. Практика: LXC (реально прогнано)
 
-> Выполнять на **Linux** (на macOS Docker Desktop полноценно не работает —
-> там эмуляция; вложенный LXC нестабилен).
+**Среда эксперимента:** Apple M1 (arm64), Linux-ядро Docker Desktop
+(`7.0.14-linuxkit`), привилегированный контейнер `ubuntu:24.04`. LXC использует
+namespaces того же ядра, поэтому KVM (как у Kata) ему не нужен.
 
-Быстрый способ — внутри привилегированного Ubuntu-контейнера (для демо на
-Linux-хосте):
-
+Команды:
 ```bash
-docker run --rm --privileged -it ubuntu:24.04 bash -lc '
-  apt-get update -qq && apt-get install -y -qq lxc wget gnupg
-  lxc-create -n demo -t download -- -d alpine -r 3.20 -a amd64
-  lxc-start -n demo
+docker run --rm --privileged --platform linux/arm64 ubuntu:24.04 bash -lc '
+  apt-get update -qq && apt-get install -y -qq lxc lxc-templates busybox-static
+  lxc-create -n c1 -t busybox
+  sed -i "/^lxc.net/d" /var/lib/lxc/c1/config   # сеть в этой среде недоступна
+  echo "lxc.net.0.type = none" >> /var/lib/lxc/c1/config
+  lxc-start -n c1
   lxc-ls -f
-  lxc-attach -n demo -- sh -c "cat /etc/os-release | head -1; whoami; ps -p 1 -o comm="
-  lxc-stop -n demo && lxc-destroy -n demo
+  lxc-attach -n c1 -- sh -c "uname -r; cat /proc/1/comm; id; cat /proc/self/uid_map"
+  lxc-stop -n c1 && lxc-destroy -n c1
 '
 ```
 
-Что смотреть:
-- `lxc-ls -f` показывает контейнер и его состояние (как отдельная «машина»);
-- `lxc-attach` — вход внутрь; видно **свой пользователь, свой rootfs и свой
-  PID 1** — то, чего нет у обычного одноразового Docker-контейнера.
+**Реальный вывод:**
 
-На **чистом Linux** (не в Docker) проще: `sudo apt install lxc lxc-templates`,
-далее те же `lxc-create/lxc-start/lxc-ls`.
+| Что проверяем | Хост | LXC-контейнер `c1` |
+|---|---|---|
+| `uname -r` (ядро) | `7.0.14-linuxkit` | `7.0.14-linuxkit` — **то же самое** |
+| `PID 1` | `bash` | `init` — **свой init** |
+| `id` | `uid=0(root)` | `uid=0(root)` |
+| `uid_map` | — | `0 0 4294967295` |
 
-> Замечание по нашей проверке: на macOS команда установки LXC проходит, но
-> вложенный запуск под эмуляцией amd64 даёт сбой — это ограничение среды, а не
-> LXC. На нативном Linux всё работает.
+**Что это доказывает:**
+- LXC даёт контейнеру **свой rootfs и свой init** — это «системный» контейнер,
+  а не один процесс, как обычно в Docker;
+- ядро **общее с хостом** (`uname -r` совпадает) — именно этим LXC принципиально
+  отличается от Kata (у которого в микро-ВМ **своё** ядро).
+
+### Unprivileged LXC — где именно «безопасность»
+`uid_map = 0 0 4294967295` означает: **root внутри контейнера = root на хосте**
+(обычный, *privileged*, LXC). Чтобы это исправить, добавляют маппинг:
+```toml
+lxc.idmap = u 0 100000 65536
+lxc.idmap = g 0 100000 65536
+```
+Тогда uid 0 в контейнере мапится на **непривилегированный uid 100000** на хосте:
+«root» внутри уже не root снаружи. Это и есть реальный вклад LXC в безопасность —
+**unprivileged (rootless) режим**, а не LXC сам по себе.
+
+> Честное замечание: в среде macOS/Docker Desktop (overlayfs) unprivileged
+> контейнер не стартует (`Permission denied` на `rootfs`/`chown` — ограничение
+> хранилища), поэтому показан только privileged. На нативном Linux / EC2 этот
+> вариант работает.
+
+**Вывод:** LXC сам по себе **не безопаснее** Docker (то же ядро). Усиление даёт
+либо **unprivileged/rootless** режим, либо **изоляция уровня ВМ** (Kata /
+Firecracker).
 
 ---
 
