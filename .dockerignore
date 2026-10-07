@@ -38,6 +38,10 @@ __pycache__
 hc.sqlite
 static-collected
 
+# Top-level docs / task folders (not needed inside the image)
+docs/
+image-optimization/
+
 # Secret material must never enter the build context / image layers
 .env
 .env.*
