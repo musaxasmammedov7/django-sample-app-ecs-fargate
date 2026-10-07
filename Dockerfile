@@ -103,15 +103,15 @@ COPY --from=builder /opt/venv /opt/venv
 
 WORKDIR /app
 
-# Copy only the files needed at runtime; chmod applied atomically (no extra
-# chmod RUN layer). Entrypoint keeps its 0755 exec bit from git.
-COPY --chown=app:app --chmod=u=rwX,go=rX manage.py ./
-# hc/settings.py reads BASE_DIR/CHANGELOG.md at import time.
-COPY --chown=app:app --chmod=u=rwX,go=rX CHANGELOG.md ./
+# Copy only the files needed at runtime; chmod is applied atomically (no extra
+# chmod RUN layer). A single COPY with many sources would FLATTEN directories
+# (e.g. hc/* would land in /app directly), so each directory keeps its own line
+# — this is also better for Docker layer caching.
+COPY --chown=app:app --chmod=u=rwX,go=rX manage.py CHANGELOG.md ./
 COPY --chown=app:app --chmod=u=rwX,go=rX hc/ ./hc/
 COPY --chown=app:app --chmod=u=rwX,go=rX templates/ ./templates/
 COPY --chown=app:app --chmod=u=rwX,go=rX static/ ./static/
-COPY --chown=app:app --chmod=u=rwX,go=rX docker/entrypoint.sh ./docker/entrypoint.sh
+COPY --chown=app:app --chmod=u=rwX,go=rX docker/ ./docker/
 
 # Build the offline static assets at image build time. SECRET_KEY is a
 # throw-away placeholder only so that Django can load settings; the real
