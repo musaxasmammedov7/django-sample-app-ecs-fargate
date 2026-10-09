@@ -41,6 +41,7 @@ static-collected
 # Top-level docs / task folders (not needed inside the image)
 docs/
 image-optimization/
+docker-compose-local/
 
 # Secret material must never enter the build context / image layers
 .env

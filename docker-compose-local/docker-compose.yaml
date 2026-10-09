@@ -1,0 +1,71 @@
+# =============================================================================
+# docker-compose.yaml — local development stack for the Django (Healthchecks)
+# application.
+#
+# Services:
+#   db  - PostgreSQL 16 (data persisted in the `pgdata` volume)
+#   app - the application built from the repository-root Dockerfile
+#
+# Configuration values are read from the `.env` file (see `.env.example`).
+# Compose deliberately does NOT define defaults for secrets/configurable
+# values — you must copy `.env.example` to `.env` first.
+# =============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Not exposed on the host by default: the app reaches it via the service
+    # name "db". Use `docker compose exec db psql ...` to connect from the host.
+    security_opt:
+      - no-new-privileges:true
+
+  app:
+    build:
+      # The build context is the repository root (where the Dockerfile is).
+      context: ..
+      dockerfile: Dockerfile
+    image: django-sample-app:dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB: postgres
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSLMODE: ${DB_SSLMODE}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      SITE_ROOT: ${SITE_ROOT}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      WAIT_FOR_DB: "true"
+      RUN_MIGRATIONS: "true"
+      HOME: /tmp
+    ports:
+      - "8000:8000"
+    # Runtime hardening mirrors the production (ECS Fargate) settings.
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    init: true
+
+volumes:
+  pgdata:
